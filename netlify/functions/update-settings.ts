@@ -7,13 +7,13 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
+  let client;
   try {
+    client = await pool.connect();
     const newSettings = JSON.parse(event.body || '{}');
 
-    const client = await pool.connect();
     const query = 'UPDATE settings SET config = $1 WHERE id = 1';
     await client.query(query, [newSettings]);
-    client.release();
 
     return {
       statusCode: 200,
@@ -26,6 +26,10 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       statusCode: 500,
       body: JSON.stringify({ error: "Failed to update settings." }),
     };
+  } finally {
+      if (client) {
+        client.release();
+      }
   }
 };
 

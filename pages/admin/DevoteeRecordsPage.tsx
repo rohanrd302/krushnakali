@@ -29,14 +29,12 @@ const DevoteeRecordsPage: React.FC = () => {
     const handleFilter = () => {
         let devotees = allDevotees;
         if (startDate) {
-            // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
             devotees = devotees.filter(d => new Date(d.registrationDate) >= new Date(startDate));
         }
         if (endDate) {
             // Add 1 day to the end date to include the whole day
             const end = new Date(endDate);
             end.setDate(end.getDate() + 1);
-            // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
             devotees = devotees.filter(d => new Date(d.registrationDate) <= end);
         }
         setFilteredDevotees(devotees);
@@ -96,9 +94,7 @@ const DevoteeRecordsPage: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{devotee.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{devotee.email}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{devotee.mobile}</td>
-                                {/* FIX: Use camelCase 'birthDate' to match DevoteeFormData type. */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(devotee.birthDate).toLocaleDateString()}</td>
-                                {/* FIX: Use camelCase 'registrationDate' to match DevoteeFormData type. */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(devotee.registrationDate).toLocaleDateString()}</td>
                             </tr>
                         ))}

@@ -51,7 +51,6 @@ const AdminDashboardPage: React.FC = () => {
                 });
 
                 setRecentDonations([...donors].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5));
-                // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
                 setRecentDevotees([...devotees].sort((a,b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime()).slice(0, 5));
             } catch (error) {
                 console.error("Failed to fetch dashboard data:", error);
@@ -84,7 +83,6 @@ const AdminDashboardPage: React.FC = () => {
                         {recentDonations.map(donation => (
                             <li key={donation.id} className="py-3 flex justify-between items-center">
                                 <div>
-                                    {/* FIX: Use camelCase 'fullName' to match DonationFormData type. */}
                                     <p className="font-semibold text-gray-800">{donation.fullName}</p>
                                     <p className="text-sm text-gray-500">{new Date(donation.date).toLocaleDateString()}</p>
                                 </div>
@@ -106,7 +104,6 @@ const AdminDashboardPage: React.FC = () => {
                         {recentDevotees.map(devotee => (
                              <li key={devotee.id} className="py-3">
                                 <p className="font-semibold text-gray-800">{devotee.name}</p>
-                                {/* FIX: Use camelCase 'registrationDate' to match DevoteeFormData type. */}
                                 <p className="text-sm text-gray-500">Registered on: {new Date(devotee.registrationDate).toLocaleDateString()}</p>
                             </li>
                         ))}

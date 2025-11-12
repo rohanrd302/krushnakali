@@ -105,7 +105,6 @@ const DonorRecordsPage: React.FC = () => {
                             <tr><td colSpan={5} className="text-center py-4">Loading donors...</td></tr>
                         ) : filteredDonors.map(donor => (
                             <tr key={donor.id}>
-                                {/* FIX: Use camelCase 'fullName' to match DonationFormData type. */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{donor.fullName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{Number(donor.amount).toLocaleString('en-IN')}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">

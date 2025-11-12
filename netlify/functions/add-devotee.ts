@@ -7,7 +7,9 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
+  let client;
   try {
+    client = await pool.connect();
     const devotee = JSON.parse(event.body || '{}');
     const { name, email, mobile, birthDate } = devotee;
 
@@ -18,14 +20,12 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     const id = `dev_${new Date().getTime()}`;
     const registrationDate = new Date().toISOString();
 
-    const client = await pool.connect();
     const query = `
       INSERT INTO devotees (id, name, email, mobile, birth_date, registration_date)
       VALUES ($1, $2, $3, $4, $5, $6)
     `;
     const values = [id, name, email, mobile, birthDate, registrationDate];
     await client.query(query, values);
-    client.release();
 
     return {
       statusCode: 201,
@@ -38,6 +38,10 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to add devotee.' }),
     };
+  } finally {
+      if(client) {
+        client.release();
+      }
   }
 };
 

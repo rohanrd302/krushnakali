@@ -3,10 +3,10 @@ import { Handler, HandlerEvent, HandlerContext } from "@netlify/functions";
 import pool from './db';
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  let client;
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     const result = await client.query('SELECT * FROM donors ORDER BY date DESC');
-    client.release();
     
     // FIX: Map snake_case database columns to camelCase properties to match frontend types.
     const donors = result.rows.map(donor => ({
@@ -36,6 +36,10 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       statusCode: 500,
       body: JSON.stringify({ error: "Failed to fetch donors." }),
     };
+  } finally {
+    if (client) {
+        client.release();
+    }
   }
 };
 
