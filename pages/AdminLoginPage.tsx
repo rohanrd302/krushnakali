@@ -13,7 +13,7 @@ const AdminLoginPage: React.FC = () => {
         setError('');
 
         // --- Hardcoded credentials for simulation ---
-        if (email === 'admin' && password === 'admin123') {
+        if (email === 'rohandhede5@gmail.com' && password === 'Admin123') {
             // In a real app, you'd get a token from the server.
             // Here, we just set a flag in sessionStorage.
             sessionStorage.setItem('isAdminAuthenticated', 'true');
