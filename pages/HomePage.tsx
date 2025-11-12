@@ -129,16 +129,26 @@ const RegistrationSection: React.FC = () => {
     const { t } = useLanguage();
     const initialFormState = { name: '', email: '', mobile: '', birthDate: '' };
     const [formData, setFormData] = useState(initialFormState);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        addDevotee(formData);
-        alert(`Thank you for registering, ${formData.name}! Your details have been saved.`);
-        setFormData(initialFormState);
+        setIsSubmitting(true);
+        try {
+            await addDevotee(formData);
+            alert(`Thank you for registering, ${formData.name}! Your details have been saved.`);
+            setFormData(initialFormState);
+        } catch (error) {
+            console.error("Registration failed:", error);
+            alert("Registration failed. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -167,8 +177,8 @@ const RegistrationSection: React.FC = () => {
                             <input id="birthDate" name="birthDate" type="date" required value={formData.birthDate} onChange={handleChange} className="bg-white text-gray-900 w-full text-base p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-custom-purple-500 focus:border-custom-purple-500" />
                         </div>
                         <div>
-                            <button type="submit" className="w-full flex justify-center bg-custom-purple-700 text-gray-100 p-3 rounded-full tracking-wide font-semibold shadow-lg cursor-pointer transition ease-in duration-300 hover:bg-custom-purple-800">
-                                {t('registerNow')}
+                            <button type="submit" disabled={isSubmitting} className="w-full flex justify-center bg-custom-purple-700 text-gray-100 p-3 rounded-full tracking-wide font-semibold shadow-lg cursor-pointer transition ease-in duration-300 hover:bg-custom-purple-800 disabled:bg-custom-purple-300">
+                                {isSubmitting ? 'Registering...' : t('registerNow')}
                             </button>
                         </div>
                     </form>
@@ -221,11 +231,20 @@ const HomePage: React.FC = () => {
     const [settings, setSettings] = useState<{landingPages: LandingPageData[], serviceCards: ServiceCardData[]} | null>(null);
 
     useEffect(() => {
-        const fullSettings = getSettings();
-        setSettings({
-            landingPages: fullSettings.landingPages,
-            serviceCards: fullSettings.serviceCards
-        });
+        const fetchSettings = async () => {
+            try {
+                const fullSettings = await getSettings();
+                if (fullSettings) {
+                    setSettings({
+                        landingPages: fullSettings.landingPages,
+                        serviceCards: fullSettings.serviceCards
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings for homepage:", error);
+            }
+        };
+        fetchSettings();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, []);
 

@@ -6,9 +6,18 @@ import { TempleSettings, LandingPageData } from '../../types';
 const AdminSettingsPage: React.FC = () => {
     const [settings, setSettings] = useState<TempleSettings | null>(null);
     const [activeTab, setActiveTab] = useState('contact');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        setSettings(getSettings());
+        const fetchSettings = async () => {
+            try {
+                const fetchedSettings = await getSettings();
+                setSettings(fetchedSettings);
+            } catch (error) {
+                console.error("Failed to load settings", error);
+            }
+        };
+        fetchSettings();
     }, []);
 
     const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
@@ -101,11 +110,19 @@ const AdminSettingsPage: React.FC = () => {
         setSettings({ ...settings, landingPages: newLandingPages });
     };
 
-    const handleSubmit = (e: FormEvent, section: string) => {
+    const handleSubmit = async (e: FormEvent, section: string) => {
         e.preventDefault();
         if (settings) {
-            updateSettings(settings);
-            alert(`${section} settings updated successfully!`);
+            setIsSubmitting(true);
+            try {
+                await updateSettings(settings);
+                alert(`${section} settings updated successfully!`);
+            } catch (error) {
+                alert(`Failed to update ${section} settings. Please try again.`);
+                console.error(`Failed to update ${section} settings`, error);
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 
@@ -130,7 +147,9 @@ const AdminSettingsPage: React.FC = () => {
                                 <input type="tel" name="phone" value={settings.contactInfo.phone} onChange={handleContactChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2" />
                             </div>
                         </div>
-                         <button type="submit" className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800">Save Contact Info</button>
+                         <button type="submit" disabled={isSubmitting} className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800 disabled:bg-custom-purple-300">
+                            {isSubmitting ? 'Saving...' : 'Save Contact Info'}
+                         </button>
                     </form>
                 );
             case 'cards':
@@ -149,7 +168,9 @@ const AdminSettingsPage: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-                        <button type="submit" className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800">Save Card Info</button>
+                        <button type="submit" disabled={isSubmitting} className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800 disabled:bg-custom-purple-300">
+                            {isSubmitting ? 'Saving...' : 'Save Card Info'}
+                        </button>
                     </form>
                 );
             case 'images':
@@ -169,7 +190,9 @@ const AdminSettingsPage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                         <button type="submit" className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800">Save Logo</button>
+                         <button type="submit" disabled={isSubmitting} className="mt-4 bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800 disabled:bg-custom-purple-300">
+                            {isSubmitting ? 'Saving...' : 'Save Logo'}
+                         </button>
                     </form>
                 );
             case 'landing':
@@ -237,7 +260,9 @@ const AdminSettingsPage: React.FC = () => {
                             ))}
                         </div>
                         <div className="mt-6 flex justify-between items-center">
-                            <button type="submit" className="bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800">Save Landing Pages</button>
+                            <button type="submit" disabled={isSubmitting} className="bg-custom-purple-700 text-white px-4 py-2 rounded-md hover:bg-custom-purple-800 disabled:bg-custom-purple-300">
+                                {isSubmitting ? 'Saving...' : 'Save Landing Pages'}
+                            </button>
                             <button
                                 type="button"
                                 onClick={handleAddSlide}

@@ -1,47 +1,65 @@
+
 import { DevoteeFormData, DonationFormData, TempleSettings } from '../types';
-import { 
-    getDevoteesDB, 
-    addDevoteeDB, 
-    getDonorsDB, 
-    addDonorDB, 
-    getSettingsDB, 
-    updateSettingsDB 
-} from './database';
+
+const handleResponse = async (response: Response) => {
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API call failed with status ${response.status}: ${errorText}`);
+    }
+    return response.json();
+};
 
 // --- API Functions ---
 
 // Devotees
-export const getDevotees = (): DevoteeFormData[] => getDevoteesDB();
+export const getDevotees = async (): Promise<DevoteeFormData[]> => {
+    const response = await fetch('/.netlify/functions/get-devotees');
+    return handleResponse(response);
+};
 
-export const addDevotee = (devotee: Omit<DevoteeFormData, 'id' | 'registrationDate'>): void => {
-    const newDevotee: DevoteeFormData = {
-        ...devotee,
-        id: `dev_${new Date().getTime()}`,
-        registrationDate: new Date().toISOString(),
-    };
-    addDevoteeDB(newDevotee);
+export const addDevotee = async (devotee: Omit<DevoteeFormData, 'id' | 'registrationDate'>): Promise<any> => {
+    const response = await fetch('/.netlify/functions/add-devotee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(devotee),
+    });
+    return handleResponse(response);
 };
 
 // Donors
-export const getDonors = (): DonationFormData[] => getDonorsDB();
+export const getDonors = async (): Promise<DonationFormData[]> => {
+    const response = await fetch('/.netlify/functions/get-donors');
+    return handleResponse(response);
+};
 
-export const addDonor = (donor: Omit<DonationFormData, 'id' | 'date'>): void => {
-    const newDonor: DonationFormData = {
-        ...donor,
-        id: `don_${new Date().getTime()}`,
-        date: new Date().toISOString(),
-    };
-    addDonorDB(newDonor);
+export const addDonor = async (donor: Omit<DonationFormData, 'id' | 'date'>): Promise<any> => {
+    const response = await fetch('/.netlify/functions/add-donor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donor),
+    });
+    return handleResponse(response);
 };
 
 
 // Settings
-export const getSettings = (): TempleSettings => getSettingsDB();
-export const updateSettings = (newSettings: TempleSettings): void => {
-    updateSettingsDB(newSettings);
+export const getSettings = async (): Promise<TempleSettings> => {
+    const response = await fetch('/.netlify/functions/get-settings');
+    const settings = await handleResponse(response);
+    // The config is stored in a 'config' property in the DB response
+    return settings.config;
 };
 
-// CSV Export Utility
+export const updateSettings = async (newSettings: TempleSettings): Promise<any> => {
+     const response = await fetch('/.netlify/functions/update-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+    });
+    return handleResponse(response);
+};
+
+// CSV Export Utility (remains client-side)
 export const downloadCSV = <T extends object>(data: T[], filename: string): void => {
     if (data.length === 0) {
         alert("No data to download.");

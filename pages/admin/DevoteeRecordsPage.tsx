@@ -1,21 +1,43 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getDevotees, downloadCSV } from '../../utils/mockApi';
 import { DevoteeFormData } from '../../types';
 
 const DevoteeRecordsPage: React.FC = () => {
-    const allDevotees = useMemo(() => getDevotees(), []);
-    const [filteredDevotees, setFilteredDevotees] = useState<DevoteeFormData[]>(allDevotees);
+    const [allDevotees, setAllDevotees] = useState<DevoteeFormData[]>([]);
+    const [filteredDevotees, setFilteredDevotees] = useState<DevoteeFormData[]>([]);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDevotees = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getDevotees();
+                setAllDevotees(data);
+                setFilteredDevotees(data);
+            } catch (error) {
+                console.error("Failed to fetch devotees:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchDevotees();
+    }, []);
 
     const handleFilter = () => {
         let devotees = allDevotees;
         if (startDate) {
+            // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
             devotees = devotees.filter(d => new Date(d.registrationDate) >= new Date(startDate));
         }
         if (endDate) {
-            devotees = devotees.filter(d => new Date(d.registrationDate) <= new Date(endDate));
+            // Add 1 day to the end date to include the whole day
+            const end = new Date(endDate);
+            end.setDate(end.getDate() + 1);
+            // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
+            devotees = devotees.filter(d => new Date(d.registrationDate) <= end);
         }
         setFilteredDevotees(devotees);
     };
@@ -67,18 +89,22 @@ const DevoteeRecordsPage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredDevotees.map(devotee => (
+                        {isLoading ? (
+                            <tr><td colSpan={5} className="text-center py-4">Loading devotees...</td></tr>
+                        ) : filteredDevotees.map(devotee => (
                             <tr key={devotee.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{devotee.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{devotee.email}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{devotee.mobile}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{devotee.birthDate}</td>
+                                {/* FIX: Use camelCase 'birthDate' to match DevoteeFormData type. */}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(devotee.birthDate).toLocaleDateString()}</td>
+                                {/* FIX: Use camelCase 'registrationDate' to match DevoteeFormData type. */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(devotee.registrationDate).toLocaleDateString()}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                 {filteredDevotees.length === 0 && <p className="text-center py-4 text-gray-500">No records found.</p>}
+                 {!isLoading && filteredDevotees.length === 0 && <p className="text-center py-4 text-gray-500">No records found.</p>}
             </div>
         </div>
     );

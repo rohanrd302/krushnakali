@@ -9,12 +9,22 @@ const ContactUsPage: React.FC = () => {
     const { t } = useLanguage();
 
     useEffect(() => {
-        setContactInfo(getSettings().contactInfo);
+        const fetchSettings = async () => {
+            try {
+                const settings = await getSettings();
+                if (settings && settings.contactInfo) {
+                    setContactInfo(settings.contactInfo);
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings for contact page:", error);
+            }
+        };
+        fetchSettings();
     }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        alert('Thank you for your message! We will get back to you shortly. (Frontend demo)');
+        alert('Thank you for your message! We will get back to you shortly. (This is a demo and does not send emails).');
         (e.target as HTMLFormElement).reset();
     };
 

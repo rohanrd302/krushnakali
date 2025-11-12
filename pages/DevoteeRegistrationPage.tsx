@@ -13,6 +13,7 @@ const DevoteeRegistrationPage: React.FC = () => {
         birthDate: '',
     };
     const [formData, setFormData] = useState<Omit<DevoteeFormData, 'id' | 'registrationDate'>>(initialFormState);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -21,11 +22,19 @@ const DevoteeRegistrationPage: React.FC = () => {
         });
     };
     
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        addDevotee(formData);
-        alert(`Thank you for registering, ${formData.name}! You will now receive updates from the temple. (Frontend demonstration)`);
-        setFormData(initialFormState);
+        setIsSubmitting(true);
+        try {
+            await addDevotee(formData);
+            alert(`Thank you for registering, ${formData.name}! You will now receive updates from the temple.`);
+            setFormData(initialFormState);
+        } catch (error) {
+            console.error("Registration failed:", error);
+            alert("Registration failed. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -95,9 +104,10 @@ const DevoteeRegistrationPage: React.FC = () => {
                         <div>
                             <button
                                 type="submit"
-                                className="w-full flex justify-center bg-custom-purple-700 text-gray-100 p-3 rounded-full tracking-wide font-semibold shadow-lg cursor-pointer transition ease-in duration-300 hover:bg-custom-purple-800"
+                                disabled={isSubmitting}
+                                className="w-full flex justify-center bg-custom-purple-700 text-gray-100 p-3 rounded-full tracking-wide font-semibold shadow-lg cursor-pointer transition ease-in duration-300 hover:bg-custom-purple-800 disabled:bg-custom-purple-300"
                             >
-                                {t('register')}
+                                {isSubmitting ? 'Registering...' : t('register')}
                             </button>
                         </div>
                     </form>

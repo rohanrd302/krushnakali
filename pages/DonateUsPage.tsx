@@ -1,6 +1,6 @@
 
 import React, { useState, ChangeEvent, FormEvent, useEffect } from 'react';
-import { DonationFormData } from '../types';
+import { DonationFormData, TempleSettings } from '../types';
 import { INDIAN_STATES } from '../constants';
 import { addDonor, getSettings } from '../utils/mockApi';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -30,10 +30,19 @@ const DonateUsPage: React.FC = () => {
     const [formData, setFormData] = useState<FormDataState>(initialFormState);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [isCustom, setIsCustom] = useState<boolean>(false);
-    const [settings, setSettings] = useState(getSettings);
+    const [settings, setSettings] = useState<TempleSettings | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        setSettings(getSettings());
+        const fetchSettings = async () => {
+            try {
+                const fetchedSettings = await getSettings();
+                setSettings(fetchedSettings);
+            } catch (error) {
+                console.error("Failed to fetch settings for donation page", error);
+            }
+        };
+        fetchSettings();
     }, []);
 
     const presetAmounts = [500, 1000, 2000, 5000];
@@ -61,6 +70,11 @@ const DonateUsPage: React.FC = () => {
     };
     
     const displayRazorpay = async (data: FormDataState) => {
+        if (!settings) {
+            alert("Site settings not loaded. Please try again.");
+            return;
+        }
+
         const options = {
             key: 'rzp_test_RZgSWi6iPvtm2s', // Your public Razorpay Key ID. The Key Secret is never used on the client-side.
             amount: Number(data.amount) * 100,
@@ -68,17 +82,21 @@ const DonateUsPage: React.FC = () => {
             name: settings.contactInfo.address.split('\n')[0] || 'Shree Shree Tribhanglalita Temple',
             description: 'Donation for Temple Seva',
             image: settings.logoUrl,
-            handler: function (response: any) {
+            handler: async function (response: any) {
                 const donationData: Omit<DonationFormData, 'id' | 'date'> = {
                     ...data,
                     status: 'Successful' as const,
                     paymentId: response.razorpay_payment_id,
                 };
-                addDonor(donationData);
-                alert(`Payment successful! Thank you for your generous donation of ₹${data.amount}. Payment ID: ${response.razorpay_payment_id}`);
-                setFormData(initialFormState);
-                setCustomAmount('');
-                setIsCustom(false);
+                try {
+                    await addDonor(donationData);
+                    alert(`Payment successful! Thank you for your generous donation of ₹${data.amount}. Payment ID: ${response.razorpay_payment_id}`);
+                    setFormData(initialFormState);
+                    setCustomAmount('');
+                    setIsCustom(false);
+                } catch(error) {
+                    alert('Your payment was successful, but we failed to record your donation. Please contact us.');
+                }
             },
             prefill: {
                 name: data.fullName,
@@ -95,13 +113,17 @@ const DonateUsPage: React.FC = () => {
 
         const paymentObject = new window.Razorpay(options);
         
-        paymentObject.on('payment.failed', function (response: any) {
+        paymentObject.on('payment.failed', async function (response: any) {
             const donationData: Omit<DonationFormData, 'id' | 'date'> = {
                 ...data,
                 status: 'Failed' as const,
                 paymentId: response.error.metadata.payment_id,
             };
-            addDonor(donationData);
+            try {
+                await addDonor(donationData);
+            } catch (error) {
+                console.error("Failed to record failed payment:", error);
+            }
             alert(`Payment failed. Please try again. Error: ${response.error.description}`);
             paymentObject.close();
         });
@@ -109,13 +131,15 @@ const DonateUsPage: React.FC = () => {
         paymentObject.open();
     }
     
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if(!formData.amount || Number(formData.amount) <= 0) {
             alert("Please enter a valid donation amount.");
             return;
         }
-        displayRazorpay(formData);
+        setIsSubmitting(true);
+        await displayRazorpay(formData);
+        setIsSubmitting(false);
     };
 
     return (
@@ -190,8 +214,8 @@ const DonateUsPage: React.FC = () => {
                          </div>
                     </div>
 
-                    <button type="submit" className="w-full bg-custom-purple-700 text-white font-bold py-4 px-4 rounded-lg text-xl hover:bg-custom-purple-800 transition-colors duration-300 shadow-lg">
-                        {t('proceedToDonate')} ₹{formData.amount || 0}
+                    <button type="submit" disabled={isSubmitting || !settings} className="w-full bg-custom-purple-700 text-white font-bold py-4 px-4 rounded-lg text-xl hover:bg-custom-purple-800 transition-colors duration-300 shadow-lg disabled:bg-custom-purple-300">
+                        {isSubmitting ? 'Processing...' : `${t('proceedToDonate')} ₹${formData.amount || 0}`}
                     </button>
                 </form>
             </div>

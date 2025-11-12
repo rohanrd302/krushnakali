@@ -20,36 +20,53 @@ const AdminDashboardPage: React.FC = () => {
     const [stats, setStats] = useState({ today: 0, month: 0, year: 0, todayCount: 0 });
     const [recentDonations, setRecentDonations] = useState<DonationFormData[]>([]);
     const [recentDevotees, setRecentDevotees] = useState<DevoteeFormData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const donors = getDonors().filter(d => d.status === 'Successful');
-        const devotees = getDevotees();
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisYear = new Date(now.getFullYear(), 0, 1);
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const donors = await getDonors();
+                const devotees = await getDevotees();
 
-        const todayDonations = donors.filter(d => new Date(d.date) >= today);
-        const monthDonations = donors.filter(d => new Date(d.date) >= thisMonth);
-        const yearDonations = donors.filter(d => new Date(d.date) >= thisYear);
+                const successfulDonors = donors.filter(d => d.status === 'Successful');
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const thisYear = new Date(now.getFullYear(), 0, 1);
 
-        const todaySum = todayDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
-        const monthSum = monthDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
-        const yearSum = yearDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
+                const todayDonations = successfulDonors.filter(d => new Date(d.date) >= today);
+                const monthDonations = successfulDonors.filter(d => new Date(d.date) >= thisMonth);
+                const yearDonations = successfulDonors.filter(d => new Date(d.date) >= thisYear);
 
-        setStats({
-            today: todaySum,
-            month: monthSum,
-            year: yearSum,
-            todayCount: todayDonations.length
-        });
+                const todaySum = todayDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
+                const monthSum = monthDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
+                const yearSum = yearDonations.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
-        setRecentDonations([...getDonors()].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5));
-        setRecentDevotees([...devotees].sort((a,b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime()).slice(0, 5));
+                setStats({
+                    today: todaySum,
+                    month: monthSum,
+                    year: yearSum,
+                    todayCount: todayDonations.length
+                });
 
+                setRecentDonations([...donors].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5));
+                // FIX: Use camelCase 'registrationDate' to match DevoteeFormData type.
+                setRecentDevotees([...devotees].sort((a,b) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime()).slice(0, 5));
+            } catch (error) {
+                console.error("Failed to fetch dashboard data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
     const formatCurrency = (amount: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amount);
+
+    if (isLoading) {
+        return <div>Loading dashboard...</div>;
+    }
 
     return (
         <div>
@@ -67,6 +84,7 @@ const AdminDashboardPage: React.FC = () => {
                         {recentDonations.map(donation => (
                             <li key={donation.id} className="py-3 flex justify-between items-center">
                                 <div>
+                                    {/* FIX: Use camelCase 'fullName' to match DonationFormData type. */}
                                     <p className="font-semibold text-gray-800">{donation.fullName}</p>
                                     <p className="text-sm text-gray-500">{new Date(donation.date).toLocaleDateString()}</p>
                                 </div>
@@ -88,6 +106,7 @@ const AdminDashboardPage: React.FC = () => {
                         {recentDevotees.map(devotee => (
                              <li key={devotee.id} className="py-3">
                                 <p className="font-semibold text-gray-800">{devotee.name}</p>
+                                {/* FIX: Use camelCase 'registrationDate' to match DevoteeFormData type. */}
                                 <p className="text-sm text-gray-500">Registered on: {new Date(devotee.registrationDate).toLocaleDateString()}</p>
                             </li>
                         ))}

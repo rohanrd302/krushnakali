@@ -1,15 +1,32 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getDonors, downloadCSV } from '../../utils/mockApi';
 import { DonationFormData, DonationStatus } from '../../types';
 
 const DonorRecordsPage: React.FC = () => {
-    const allDonors = useMemo(() => getDonors(), []);
-    const [filteredDonors, setFilteredDonors] = useState<DonationFormData[]>(allDonors);
+    const [allDonors, setAllDonors] = useState<DonationFormData[]>([]);
+    const [filteredDonors, setFilteredDonors] = useState<DonationFormData[]>([]);
     
     const [statusFilter, setStatusFilter] = useState<DonationStatus | 'all'>('all');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDonors = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getDonors();
+                setAllDonors(data);
+                setFilteredDonors(data);
+            } catch (error) {
+                console.error("Failed to fetch donors:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchDonors();
+    }, []);
 
     const handleFilter = () => {
         let donors = allDonors;
@@ -20,7 +37,9 @@ const DonorRecordsPage: React.FC = () => {
             donors = donors.filter(d => new Date(d.date) >= new Date(startDate));
         }
         if (endDate) {
-            donors = donors.filter(d => new Date(d.date) <= new Date(endDate));
+            const end = new Date(endDate);
+            end.setDate(end.getDate() + 1);
+            donors = donors.filter(d => new Date(d.date) <= end);
         }
         setFilteredDonors(donors);
     };
@@ -82,8 +101,11 @@ const DonorRecordsPage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredDonors.map(donor => (
+                        {isLoading ? (
+                            <tr><td colSpan={5} className="text-center py-4">Loading donors...</td></tr>
+                        ) : filteredDonors.map(donor => (
                             <tr key={donor.id}>
+                                {/* FIX: Use camelCase 'fullName' to match DonationFormData type. */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{donor.fullName}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{Number(donor.amount).toLocaleString('en-IN')}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -101,7 +123,7 @@ const DonorRecordsPage: React.FC = () => {
                         ))}
                     </tbody>
                 </table>
-                {filteredDonors.length === 0 && <p className="text-center py-4 text-gray-500">No records found.</p>}
+                {!isLoading && filteredDonors.length === 0 && <p className="text-center py-4 text-gray-500">No records found.</p>}
             </div>
         </div>
     );

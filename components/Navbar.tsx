@@ -10,7 +10,17 @@ const TempleLogo: React.FC = () => {
     const [logoUrl, setLogoUrl] = useState('/assets/images/temple-logo.png');
 
     useEffect(() => {
-        setLogoUrl(getSettings().logoUrl);
+        const fetchSettings = async () => {
+            try {
+                const settings = await getSettings();
+                if (settings && settings.logoUrl) {
+                    setLogoUrl(settings.logoUrl);
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings:", error);
+            }
+        };
+        fetchSettings();
     }, []);
 
     return (

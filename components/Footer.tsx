@@ -10,8 +10,17 @@ const Footer: React.FC = () => {
     const { t } = useLanguage();
 
     useEffect(() => {
-        const settings = getSettings();
-        setContactInfo(settings.contactInfo);
+        const fetchSettings = async () => {
+            try {
+                const settings = await getSettings();
+                if (settings && settings.contactInfo) {
+                    setContactInfo(settings.contactInfo);
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings for footer:", error);
+            }
+        };
+        fetchSettings();
     }, []);
 
     return (
